@@ -9,6 +9,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 ENV_FILE = ROOT / ".env"
+DATA_DIR = ROOT / "data"
 AIRFLOW_DEFAULT_UID = 50000
 
 DIRECTORIES = (
@@ -16,6 +17,7 @@ DIRECTORIES = (
     "airflow/logs",
     "airflow/plugins",
     "airflow/config",
+    "data",
     "src/ingestion",
     "src/processing",
     "src/validation",
@@ -69,6 +71,12 @@ def ensure_airflow_uid() -> None:
         print(f"AIRFLOW_UID ajustado para {expected_uid}.")
 
 
+def ensure_data_permissions() -> None:
+    """Garante escrita do grupo usado pelos containers Airflow no volume de dados."""
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
+    DATA_DIR.chmod(775)
+
+
 def generate_env() -> None:
     """Cria .env ou repara AIRFLOW_UID, preservando credenciais existentes."""
     if ENV_FILE.exists():
@@ -101,6 +109,7 @@ def generate_env() -> None:
 def main() -> None:
     for directory in DIRECTORIES:
         (ROOT / directory).mkdir(parents=True, exist_ok=True)
+    ensure_data_permissions()
     generate_env()
 
 

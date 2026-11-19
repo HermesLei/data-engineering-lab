@@ -1,0 +1,35 @@
+{
+  "name": "data-engineering-lab",
+  "dockerComposeFile": "../docker-compose.yml",
+  "service": "airflow-webserver",
+  "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+  "initializeCommand": "python3 scripts/bootstrap.py",
+  "shutdownAction": "stopCompose",
+  "forwardPorts": [8080],
+  "portsAttributes": {
+    "8080": {
+      "label": "Apache Airflow",
+      "onAutoForward": "notify"
+    }
+  },
+  "postCreateCommand": "pip install --user -r requirements-dev.txt",
+  "features": {
+    "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {}
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "charliermarsh.ruff",
+        "ms-azuretools.vscode-docker",
+        "redhat.vscode-yaml"
+      ],
+      "settings": {
+        "python.defaultInterpreterPath": "/usr/local/bin/python",
+        "editor.formatOnSave": true,
+        "python.testing.pytestEnabled": true
+      }
+    }
+  }
+}

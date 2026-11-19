@@ -29,7 +29,6 @@ apply_ruleset() {
   local ruleset_id
 
   payload="$(mktemp)"
-  trap 'rm -f "$payload"' RETURN
 
   jq -n \
     --arg name "$name" \
@@ -86,6 +85,7 @@ apply_ruleset() {
     gh api --method POST "repos/$REPO/rulesets" --input "$payload" >/dev/null
   fi
 
+  rm -f "$payload"
   echo "Applied: $name"
 }
 

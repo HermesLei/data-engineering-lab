@@ -1,7 +1,10 @@
 name: data-engineering-lab
 
 x-airflow-common: &airflow-common
-  image: apache/airflow:2.10.5
+  image: data-engineering-lab-airflow:dev
+  build:
+    context: .
+    dockerfile: infrastructure/docker/airflow/Dockerfile
   env_file:
     - .env
   environment:

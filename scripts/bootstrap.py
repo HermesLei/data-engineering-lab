@@ -9,6 +9,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 ENV_FILE = ROOT / ".env"
+AIRFLOW_DEFAULT_UID = 50000
 
 DIRECTORIES = (
     "airflow/dags",
@@ -24,10 +25,55 @@ DIRECTORIES = (
 )
 
 
+def get_airflow_uid() -> int:
+    """Retorna o UID para os containers, evitando executar Airflow como root."""
+    current_uid = os.getuid() if hasattr(os, "getuid") else AIRFLOW_DEFAULT_UID
+    return current_uid if current_uid > 0 else AIRFLOW_DEFAULT_UID
+
+
+def ensure_airflow_uid() -> None:
+    """Corrige AIRFLOW_UID ausente ou igual a zero sem alterar outros segredos."""
+    expected_uid = get_airflow_uid()
+
+    if not ENV_FILE.exists():
+        return
+
+    lines = ENV_FILE.read_text(encoding="utf-8").splitlines()
+    updated_lines: list[str] = []
+    uid_found = False
+
+    for line in lines:
+        if line.startswith("AIRFLOW_UID="):
+            uid_found = True
+            try:
+                current_uid = int(line.partition("=")[2])
+            except ValueError:
+                current_uid = 0
+
+            if current_uid <= 0:
+                updated_lines.append(f"AIRFLOW_UID={expected_uid}")
+            else:
+                updated_lines.append(line)
+        else:
+            updated_lines.append(line)
+
+    if not uid_found:
+        updated_lines.append(f"AIRFLOW_UID={expected_uid}")
+
+    if updated_lines != lines:
+        ENV_FILE.write_text("\n".join(updated_lines) + "\n", encoding="utf-8")
+        try:
+            ENV_FILE.chmod(0o600)
+        except OSError:
+            pass
+        print(f"AIRFLOW_UID ajustado para {expected_uid}.")
+
+
 def generate_env() -> None:
-    """Cria .env apenas quando ainda não existe, sem sobrescrever credenciais."""
+    """Cria .env ou repara AIRFLOW_UID, preservando credenciais existentes."""
     if ENV_FILE.exists():
-        print(".env já existe; mantendo as configurações atuais.")
+        print(".env já existe; mantendo as credenciais atuais.")
+        ensure_airflow_uid()
         return
 
     fernet_key = base64.urlsafe_b64encode(secrets.token_bytes(32)).decode()
@@ -37,7 +83,7 @@ def generate_env() -> None:
         "AIRFLOW_WEBSERVER_SECRET_KEY": secrets.token_urlsafe(32),
         "_AIRFLOW_WWW_USER_USERNAME": "admin",
         "_AIRFLOW_WWW_USER_PASSWORD": secrets.token_urlsafe(18),
-        "AIRFLOW_UID": str(os.getuid() if hasattr(os, "getuid") else 50000),
+        "AIRFLOW_UID": str(get_airflow_uid()),
     }
     ENV_FILE.write_text(
         "# Gerado localmente. Nunca versione este arquivo.\n"

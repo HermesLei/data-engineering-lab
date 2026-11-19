@@ -3,6 +3,7 @@
   "dockerComposeFile": "../docker-compose.yml",
   "service": "airflow-webserver",
   "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+  "initializeCommand": "python3 scripts/bootstrap.py",
   "shutdownAction": "stopCompose",
   "forwardPorts": [8080],
   "portsAttributes": {
@@ -11,7 +12,7 @@
       "onAutoForward": "notify"
     }
   },
-  "postCreateCommand": "python scripts/bootstrap.py && pip install -r requirements-dev.txt",
+  "postCreateCommand": "pip install -r requirements-dev.txt",
   "customizations": {
     "vscode": {
       "extensions": [

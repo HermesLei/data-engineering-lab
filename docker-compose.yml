@@ -4,7 +4,7 @@ x-airflow-common: &airflow-common
   image: apache/airflow:2.10.5
   env_file:
     - .env
-  environment: &airflow-common-env
+  environment:
     AIRFLOW__CORE__EXECUTOR: LocalExecutor
     AIRFLOW__CORE__LOAD_EXAMPLES: "false"
     AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: "true"
@@ -46,10 +46,11 @@ services:
     command:
       - -c
       - |
+        set -e
         airflow db migrate
         airflow users create \
-          --username "${_AIRFLOW_WWW_USER_USERNAME:-admin}" \
-          --password "${_AIRFLOW_WWW_USER_PASSWORD}" \
+          --username admin \
+          --password "$$_AIRFLOW_WWW_USER_PASSWORD" \
           --firstname Data \
           --lastname Engineer \
           --role Admin \

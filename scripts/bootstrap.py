@@ -74,7 +74,7 @@ def ensure_airflow_uid() -> None:
 def ensure_data_permissions() -> None:
     """Garante escrita do grupo usado pelos containers Airflow no volume de dados."""
     DATA_DIR.mkdir(parents=True, exist_ok=True)
-    DATA_DIR.chmod(0o775)
+    DATA_DIR.chmod(775)
 
 
 def generate_env() -> None:

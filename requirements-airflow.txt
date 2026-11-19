@@ -1,0 +1,2 @@
+# Dependências adicionais da imagem customizada do Airflow
+pyarrow==19.0.1

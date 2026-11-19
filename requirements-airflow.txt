@@ -1,2 +1,3 @@
 # Dependências adicionais da imagem customizada do Airflow
-pyarrow>=17,<18
+# Alinhado à versão fixada nas constraints oficiais do Airflow 2.10.5 / Python 3.12.
+pyarrow==19.0.0

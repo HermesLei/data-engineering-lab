@@ -5,8 +5,7 @@ x-airflow-common: &airflow-common
   build:
     context: .
     dockerfile: infrastructure/docker/airflow/Dockerfile
-  env_file:
-    - .env
+  env_file: [.env]
   environment:
     AIRFLOW__CORE__EXECUTOR: LocalExecutor
     AIRFLOW__CORE__LOAD_EXAMPLES: "false"
@@ -15,13 +14,15 @@ x-airflow-common: &airflow-common
     AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW_FERNET_KEY}
     AIRFLOW__WEBSERVER__EXPOSE_CONFIG: "false"
     AIRFLOW__WEBSERVER__SECRET_KEY: ${AIRFLOW_WEBSERVER_SECRET_KEY}
-    _PIP_ADDITIONAL_REQUIREMENTS: ""
+    _AIRFLOW_WWW_USER_USERNAME: ${_AIRFLOW_WWW_USER_USERNAME}
+    _AIRFLOW_WWW_USER_PASSWORD: ${_AIRFLOW_WWW_USER_PASSWORD}
   volumes:
     - ./airflow/dags:/opt/airflow/dags
     - ./airflow/logs:/opt/airflow/logs
     - ./airflow/plugins:/opt/airflow/plugins
     - ./airflow/config:/opt/airflow/config
     - ./src:/opt/airflow/src
+    - ./data:/opt/airflow/data
   user: "${AIRFLOW_UID:-50000}:0"
   depends_on:
     postgres:
@@ -48,23 +49,20 @@ services:
     entrypoint: /bin/bash
     command:
       - -c
-      - |
-        set -e
-        airflow db migrate
-        airflow users create \
-          --username admin \
-          --password "$$_AIRFLOW_WWW_USER_PASSWORD" \
-          --firstname Data \
-          --lastname Engineer \
-          --role Admin \
-          --email admin@example.com || true
+      - >-
+        set -e;
+        airflow db migrate;
+        airflow users create
+        --username "$$_AIRFLOW_WWW_USER_USERNAME"
+        --password "$$_AIRFLOW_WWW_USER_PASSWORD"
+        --firstname Data --lastname Engineer
+        --role Admin --email admin@example.com || true
     restart: "no"
 
   airflow-webserver:
     <<: *airflow-common
     command: webserver
-    ports:
-      - "8080:8080"
+    ports: ["8080:8080"]
     healthcheck:
       test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
       interval: 10s

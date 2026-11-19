@@ -2,6 +2,22 @@
 
 Laboratório progressivo de Engenharia de Dados com práticas próximas de ambientes corporativos.
 
+## Governança do repositório
+
+O fluxo de integração é obrigatório:
+
+```text
+branches de trabalho -> dev -> main
+```
+
+- Toda branch de trabalho deve nascer da versão atual de `dev`.
+- PR de feature/fix/chore/docs/test/refactor deve ter `dev` como destino.
+- Somente `dev` pode ter PR com destino a `main`.
+- CI e Branch policy precisam passar antes do merge.
+- Push direto em `main` e `dev` deve ser bloqueado pelas regras de proteção do GitHub.
+
+Consulte [CONTRIBUTING.md](CONTRIBUTING.md) para comandos, convenções e critérios de PR. A política automatizada está em `.github/workflows/branch-policy.yml`.
+
 ## Stack
 
 - **GitHub Codespaces**: ambiente de desenvolvimento no navegador.
@@ -56,7 +72,7 @@ A origem contém intencionalmente cliente nulo, quantidade negativa, preço ause
 
 ```bash
 python -m pip install -r requirements-dev.txt -r requirements-airflow.txt
-PYTHONPATH=src ruff check .
+ruff check .
 PYTHONPATH=src pytest -q
 ```
 

@@ -1,0 +1,62 @@
+name: Branch policy
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
+    branches: [dev, main]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  validate-branch-flow:
+    name: Validate branch flow
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout pull request
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Enforce allowed pull request direction
+        env:
+          BASE_BRANCH: ${{ github.event.pull_request.base.ref }}
+          HEAD_BRANCH: ${{ github.event.pull_request.head.ref }}
+          HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
+          TARGET_REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          if [[ "$HEAD_REPOSITORY" != "$TARGET_REPOSITORY" ]]; then
+            echo "::error::Pull requests from forks are not accepted by this repository policy."
+            exit 1
+          fi
+
+          if [[ "$BASE_BRANCH" == "main" ]]; then
+            if [[ "$HEAD_BRANCH" != "dev" ]]; then
+              echo "::error::Only dev may open pull requests targeting main."
+              exit 1
+            fi
+            echo "Allowed: dev -> main."
+            exit 0
+          fi
+
+          if [[ "$BASE_BRANCH" != "dev" ]]; then
+            echo "::error::The only valid pull request targets are dev and main."
+            exit 1
+          fi
+
+          if [[ "$HEAD_BRANCH" == "main" || "$HEAD_BRANCH" == "dev" ]]; then
+            echo "::error::A work branch, not main/dev, must target dev."
+            exit 1
+          fi
+
+          git fetch origin dev:refs/remotes/origin/dev
+          if ! git merge-base --is-ancestor origin/dev HEAD; then
+            echo "::error::This branch is not based on the current dev. Rebase or merge origin/dev into it, then push again."
+            exit 1
+          fi
+
+          echo "Allowed: work branch -> dev; current dev is an ancestor of the branch."
